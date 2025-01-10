@@ -1,83 +1,93 @@
-﻿public static class SomaProgressiva
+﻿using System;
+using System.Collections.Generic;
+using Newtonsoft.Json;
+using System.IO;
+using System.Linq;
+
+class Program
 {
-    public static int CalcularSoma()
+    static void Main()
     {
+        
         int indice = 13, soma = 0, k = 0;
         while (k < indice)
         {
-            k++;
-            soma += k;
+            k = k + 1;
+            soma = soma + k;
         }
-        return soma;
-    }
-}
+        Console.WriteLine($"Soma Progressiva: {soma}");
 
-public static class Fibonacci
-{
-    public static bool PertenceAoFibonacci(int numero)
+        
+        int numeroFibonacci = 13; 
+        bool pertenceFibonacci = VerificarFibonacci(numeroFibonacci);
+        Console.WriteLine($"Fibonacci ({numeroFibonacci}): {pertenceFibonacci}");
+
+      
+        List<Faturamento> faturamentos = CalcularFaturamentoDiario();
+
+       
+        double menorFaturamento = faturamentos.Where(f => f.Valor > 0).Min(f => f.Valor);
+        double maiorFaturamento = faturamentos.Where(f => f.Valor > 0).Max(f => f.Valor);
+        Console.WriteLine($"Menor Faturamento: {menorFaturamento}");
+        Console.WriteLine($"Maior Faturamento: {maiorFaturamento}");
+
+    
+        double mediaFaturamento = faturamentos.Where(f => f.Valor > 0).Average(f => f.Valor);
+        int diasAcimaDaMedia = faturamentos.Count(f => f.Valor > mediaFaturamento);
+        Console.WriteLine($"Dias acima da média: {diasAcimaDaMedia}");
+
+      
+        CalcularPercentualEstados();
+
+       
+        string palavra = "hello";
+        string palavraInvertida = InverterString(palavra);
+        Console.WriteLine($"Inversão de string ({palavra}): {palavraInvertida}");
+
+        
+        string json = GerarJson(faturamentos);
+        File.WriteAllText("dados.json", json);
+        Console.WriteLine("JSON gerado com sucesso!");
+
+       
+        string jsonLido = File.ReadAllText("dados.json");
+        Console.WriteLine("\nConteúdo do JSON gerado:");
+        Console.WriteLine(jsonLido);
+    }
+
+   
+    static bool VerificarFibonacci(int numero)
     {
         int a = 0, b = 1;
         while (b < numero)
         {
-            int temp = b;
-            b = a + b;
-            a = temp;
+            int temp = a + b;
+            a = b;
+            b = temp;
         }
-        return b == numero || numero == 0;
+        return b == numero;
     }
-}
 
-public static class FaturamentoDiario
-{
-    public static (double menor, double maior, int diasAcimaDaMedia) AnalisarFaturamento(List<double> faturamentos)
+   
+    static List<Faturamento> CalcularFaturamentoDiario()
     {
-        var valoresFiltrados = faturamentos.Where(f => f > 0).ToList();
-        double menor = valoresFiltrados.Min();
-        double maior = valoresFiltrados.Max();
-        double media = valoresFiltrados.Average();
-        int diasAcimaDaMedia = valoresFiltrados.Count(f => f > media);
+        List<Faturamento> faturamentos = new List<Faturamento>();
 
-        return (menor, maior, diasAcimaDaMedia);
-    }
-}
-
-public static class FaturamentoPorEstado
-{
-    public static Dictionary<string, double> CalcularPercentuais(Dictionary<string, double> faturamento)
-    {
-        double total = faturamento.Values.Sum();
-        return faturamento.ToDictionary(kvp => kvp.Key, kvp => (kvp.Value / total) * 100);
-    }
-}
-
-public static class InversorDeString
-{
-    public static string Inverter(string texto)
-    {
-        string resultado = string.Empty;
-        for (int i = texto.Length - 1; i >= 0; i--)
+       
+        Random random = new Random();
+        for (int dia = 1; dia <= 30; dia++)
         {
-            resultado += texto[i];
+            double valor = dia % 2 == 0 ? random.NextDouble() * 50000 : 0.0; 
+            faturamentos.Add(new Faturamento { Dia = dia, Valor = valor });
         }
-        return resultado;
+
+        return faturamentos;
     }
-}
 
-class Program
-{
-    static void Main(string[] args)
+   
+    static void CalcularPercentualEstados()
     {
-      
-        Console.WriteLine("Soma Progressiva: " + SomaProgressiva.CalcularSoma());
-
-        Console.WriteLine("Fibonacci (13): " + Fibonacci.PertenceAoFibonacci(13));
-        Console.WriteLine("Fibonacci (15): " + Fibonacci.PertenceAoFibonacci(15));
-
-        var faturamentos = new List<double> { 200, 300, 0, 500, 0, 100, 800 };
-        var resultadoFaturamento = FaturamentoDiario.AnalisarFaturamento(faturamentos);
-        Console.WriteLine($"Menor: {resultadoFaturamento.menor}, Maior: {resultadoFaturamento.maior}, Dias acima da média: {resultadoFaturamento.diasAcimaDaMedia}");
-
-        var faturamentoPorEstado = new Dictionary<string, double>
+        var faturamentoEstados = new Dictionary<string, double>
         {
             { "SP", 67836.43 },
             { "RJ", 36678.66 },
@@ -85,12 +95,34 @@ class Program
             { "ES", 27165.48 },
             { "Outros", 19849.53 }
         };
-        var resultadoPercentuais = FaturamentoPorEstado.CalcularPercentuais(faturamentoPorEstado);
-        foreach (var item in resultadoPercentuais)
-        {
-            Console.WriteLine($"{item.Key}: {item.Value}%");
-        }
 
-        Console.WriteLine("Inversão de string (hello): " + InversorDeString.Inverter("hello"));
+        double totalFaturamento = faturamentoEstados.Values.Sum();
+
+        foreach (var estado in faturamentoEstados)
+        {
+            double percentual = (estado.Value / totalFaturamento) * 100;
+            Console.WriteLine($"{estado.Key}: {percentual:F2}%");
+        }
     }
+
+   
+    static string InverterString(string str)
+    {
+        char[] array = str.ToCharArray();
+        Array.Reverse(array);
+        return new string(array);
+    }
+
+   
+    static string GerarJson(List<Faturamento> faturamentos)
+    {
+        return JsonConvert.SerializeObject(faturamentos, Formatting.Indented);
+    }
+}
+
+
+public class Faturamento
+{
+    public int Dia { get; set; }
+    public double Valor { get; set; }
 }

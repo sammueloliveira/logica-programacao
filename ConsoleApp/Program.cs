@@ -1,62 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using Newtonsoft.Json;
-using System.IO;
-using System.Linq;
+﻿using Newtonsoft.Json;
 
 class Program
 {
-    static void Main()
+    static void Main(string[] args)
     {
-        
-        int indice = 13, soma = 0, k = 0;
-        while (k < indice)
-        {
-            k = k + 1;
-            soma = soma + k;
-        }
+        int indice = 13;
+        int soma = SomaProgressiva.CalcularSoma(indice);
         Console.WriteLine($"Soma Progressiva: {soma}");
 
-        
-        int numeroFibonacci = 13; 
-        bool pertenceFibonacci = VerificarFibonacci(numeroFibonacci);
+        int numeroFibonacci = 13;
+        bool pertenceFibonacci = Fibonacci.Verificar(numeroFibonacci);
         Console.WriteLine($"Fibonacci ({numeroFibonacci}): {pertenceFibonacci}");
 
-      
-        List<Faturamento> faturamentos = CalcularFaturamentoDiario();
+        List<Faturamento> faturamentos = FaturamentoService.CalcularFaturamentoDiario();
 
-       
-        double menorFaturamento = faturamentos.Where(f => f.Valor > 0).Min(f => f.Valor);
-        double maiorFaturamento = faturamentos.Where(f => f.Valor > 0).Max(f => f.Valor);
+        double menorFaturamento = FaturamentoService.ObterMenorFaturamento(faturamentos);
+        double maiorFaturamento = FaturamentoService.ObterMaiorFaturamento(faturamentos);
         Console.WriteLine($"Menor Faturamento: {menorFaturamento}");
         Console.WriteLine($"Maior Faturamento: {maiorFaturamento}");
 
-    
-        double mediaFaturamento = faturamentos.Where(f => f.Valor > 0).Average(f => f.Valor);
-        int diasAcimaDaMedia = faturamentos.Count(f => f.Valor > mediaFaturamento);
+        double mediaFaturamento = FaturamentoService.CalcularMediaFaturamento(faturamentos);
+        int diasAcimaDaMedia = FaturamentoService.ContarDiasAcimaDaMedia(faturamentos, mediaFaturamento);
         Console.WriteLine($"Dias acima da média: {diasAcimaDaMedia}");
 
-      
-        CalcularPercentualEstados();
+        FaturamentoService.CalcularPercentualEstados();
 
-       
         string palavra = "hello";
-        string palavraInvertida = InverterString(palavra);
+        string palavraInvertida = StringHelper.Inverter(palavra);
         Console.WriteLine($"Inversão de string ({palavra}): {palavraInvertida}");
 
-        
-        string json = GerarJson(faturamentos);
+        string json = JsonHelper.GerarJson(faturamentos);
         File.WriteAllText("dados.json", json);
         Console.WriteLine("JSON gerado com sucesso!");
 
-       
         string jsonLido = File.ReadAllText("dados.json");
         Console.WriteLine("\nConteúdo do JSON gerado:");
         Console.WriteLine(jsonLido);
     }
+}
 
-   
-    static bool VerificarFibonacci(int numero)
+public static class SomaProgressiva
+{
+    public static int CalcularSoma(int indice)
+    {
+        int soma = 0, k = 0;
+        while (k < indice)
+        {
+            k++;
+            soma += k;
+        }
+        return soma;
+    }
+}
+
+public static class Fibonacci
+{
+    public static bool Verificar(int numero)
     {
         int a = 0, b = 1;
         while (b < numero)
@@ -67,25 +66,45 @@ class Program
         }
         return b == numero;
     }
+}
 
-   
-    static List<Faturamento> CalcularFaturamentoDiario()
+public static class FaturamentoService
+{
+    public static List<Faturamento> CalcularFaturamentoDiario()
     {
-        List<Faturamento> faturamentos = new List<Faturamento>();
+        var faturamentos = new List<Faturamento>();
+        var random = new Random();
 
-       
-        Random random = new Random();
         for (int dia = 1; dia <= 30; dia++)
         {
-            double valor = dia % 2 == 0 ? random.NextDouble() * 50000 : 0.0; 
+            double valor = dia % 2 == 0 ? random.NextDouble() * 50000 : 0.0;
             faturamentos.Add(new Faturamento { Dia = dia, Valor = valor });
         }
 
         return faturamentos;
     }
 
-   
-    static void CalcularPercentualEstados()
+    public static double ObterMenorFaturamento(List<Faturamento> faturamentos)
+    {
+        return faturamentos.Where(f => f.Valor > 0).Min(f => f.Valor);
+    }
+
+    public static double ObterMaiorFaturamento(List<Faturamento> faturamentos)
+    {
+        return faturamentos.Where(f => f.Valor > 0).Max(f => f.Valor);
+    }
+
+    public static double CalcularMediaFaturamento(List<Faturamento> faturamentos)
+    {
+        return faturamentos.Where(f => f.Valor > 0).Average(f => f.Valor);
+    }
+
+    public static int ContarDiasAcimaDaMedia(List<Faturamento> faturamentos, double media)
+    {
+        return faturamentos.Count(f => f.Valor > media);
+    }
+
+    public static void CalcularPercentualEstados()
     {
         var faturamentoEstados = new Dictionary<string, double>
         {
@@ -104,25 +123,28 @@ class Program
             Console.WriteLine($"{estado.Key}: {percentual:F2}%");
         }
     }
+}
 
-   
-    static string InverterString(string str)
+public static class StringHelper
+{
+    public static string Inverter(string str)
     {
         char[] array = str.ToCharArray();
         Array.Reverse(array);
         return new string(array);
     }
+}
 
-   
-    static string GerarJson(List<Faturamento> faturamentos)
+public static class JsonHelper
+{
+    public static string GerarJson(List<Faturamento> faturamentos)
     {
         return JsonConvert.SerializeObject(faturamentos, Formatting.Indented);
     }
 }
 
-
 public class Faturamento
 {
     public int Dia { get; set; }
     public double Valor { get; set; }
-}
+} 
